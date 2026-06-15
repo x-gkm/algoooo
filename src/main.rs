@@ -1,13 +1,19 @@
-use std::env;
-use std::sync::Mutex;
+use std::{cell::RefCell, env};
 
-use algoleague::SubmissionStatus;
+use algoleague::ContestParticipationType;
 use futures::TryStreamExt;
-use tokio::{fs::File, io::AsyncWriteExt};
+use sqlx::{postgres::PgPoolOptions, query};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let _ = dotenvy::dotenv();
+
+    let db_url = env::var("DATABASE_URL")?;
+
+    let db = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?;
 
     let client = algoleague::Client::login(
         &env::var("ALGOLEAGUE_USERNAME")?,
@@ -15,79 +21,119 @@ async fn main() -> anyhow::Result<()> {
     )
     .await?;
 
-    let signups_file = Mutex::new(File::create("signups.csv").await?);
-    let solves_file = Mutex::new(File::create("solves.csv").await?);
-    let contests_file = Mutex::new(File::create("contests.csv").await?);
-    let problems_file = Mutex::new(File::create("problems.csv").await?);
-
     client
         .contests()
         .map_err(anyhow::Error::from)
         .try_for_each(async |contest| {
-            contests_file
-                .lock()
-                .unwrap()
-                .write_all(
-                    format!("{:?}, {:?}\n", contest.slug, contest.participation_type).as_bytes(),
-                )
-                .await?;
-
-            for problem in client.problems(&contest.id).await? {
-                problems_file
-                    .lock()
-                    .unwrap()
-                    .write_all(format!("{:?}, {:?}\n", contest.slug, problem.slug).as_bytes())
-                    .await?;
+            if contest.participation_type != ContestParticipationType::Individual {
+                return Ok(())
             }
 
-            if let Err(e) = client
-                .submissions(contest.id)
-                .map_err(anyhow::Error::from)
-                .try_for_each(async |submission| {
-                    if !submission.during_contest || submission.status != SubmissionStatus::Accepted
-                    {
-                        return Ok(());
-                    }
+            let record = query!("SELECT FROM contests WHERE name = $1", contest.slug)
+                .fetch_optional(&db)
+                .await?;
 
-                    solves_file
-                        .lock()
-                        .unwrap()
-                        .write_all(
-                            format!(
-                                "{:?}, {:?}, {:?}\n",
-                                submission.user_name, contest.slug, submission.problem_slug,
-                            )
-                            .as_bytes(),
-                        )
-                        .await?;
-
-                    Ok(())
-                })
-                .await
-            {
-                eprintln!("{e}");
+            if record.is_some() {
                 return Ok(());
             }
 
-            client
-                .participants(&contest.slug)
+            let transaction = RefCell::new(db.begin().await?);
+
+            let db_contest = query!(
+                "INSERT INTO contests (name, start_date, end_date) VALUES ($1, $2, $3) RETURNING id",
+                contest.slug,
+                contest.start_date,
+                contest.end_date
+            )
+            .fetch_one(&mut **transaction.borrow_mut())
+            .await?;
+
+            match client.problems(&contest.id).await {
+                Err(e) => {
+                    eprintln!("{e}");
+                    return Ok(());
+                }
+                Ok(problems) => {
+                    for (problem, letter) in problems.into_iter().zip("abcdefghijklmnopqrstuvwxyz".chars()) {
+                        let db_problem = query!(
+                            "INSERT INTO problems (name) VALUES ($1)
+                            ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+                            RETURNING id",
+                            problem.slug,
+                        )
+                        .fetch_one(&mut **transaction.borrow_mut())
+                        .await?;
+
+                        query!(
+                            "INSERT INTO contest_problems (contest_id, problem_id, letter) VALUES ($1, $2, $3)",
+                            db_contest.id,
+                            db_problem.id,
+                            letter.to_string(),
+                        )
+                        .execute(&mut **transaction.borrow_mut())
+                        .await?;
+                    }
+                }
+            }
+
+            if let Err(e) = client
+                .submissions(contest.id.clone())
                 .map_err(anyhow::Error::from)
-                .try_for_each(async |participant| {
-                    if participant.creation_time > contest.end_date {
-                        return Ok(());
+                .try_for_each(async |submission| {
+                    if !submission.during_contest {
+                        return Ok(())
                     }
 
-                    signups_file
-                        .lock()
-                        .unwrap()
-                        .write_all(
-                            format!("{:?}, {:?}\n", participant.name, contest.slug).as_bytes(),
+                    if query!(
+                        "SELECT FROM problems WHERE name = $1",
+                        submission.problem_slug
+                    )
+                        .fetch_optional(&mut **transaction.borrow_mut())
+                        .await?
+                        .is_none() {
+                            return Ok(());
+                        }
+
+                    query!(
+                        "WITH inserted_user AS (
+                            INSERT INTO users (name) VALUES ($1)
+                            ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+                            RETURNING id
                         )
-                        .await?;
+                        INSERT INTO submissions (
+                            user_id,
+                            problem_id,
+                            contest_id,
+                            status,
+                            start_date,
+                            end_date
+                        ) VALUES (
+                            (SELECT id FROM inserted_user),
+                            (SELECT id FROM problems WHERE name = $2),
+                            $3,
+                            $4,
+                            $5,
+                            $6
+                        )",
+                        submission.user_name,
+                        submission.problem_slug,
+                        db_contest.id,
+                        format!("{:?}", submission.status),
+                        submission.start_date,
+                        submission.end_date,
+                    )
+                    .execute(&mut **transaction.borrow_mut())
+                    .await?;
 
                     Ok(())
                 })
-                .await?;
+                .await {
+                    eprintln!("{e}");
+                    return Ok(());
+                }
+
+            transaction.into_inner().commit().await?;
+
             Ok(())
         })
         .await?;

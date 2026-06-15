@@ -1,0 +1,6 @@
+CREATE TABLE contests (
+    id SERIAl PRIMARY KEY,
+    name TEXT NOT NULL,
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL
+);

@@ -49,6 +49,7 @@
                     numpy
                   ]
                 ))
+                sqlx-cli
               ];
             };
         };
