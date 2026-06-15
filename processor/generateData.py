@@ -1,5 +1,6 @@
 import json
 import random
+import sys
 
 
 def generate_cp_data():
@@ -64,5 +65,4 @@ def generate_cp_data():
 
 dataset = generate_cp_data()
 
-with open("cp_test_data.json", "w", encoding="utf-8") as f:
-    json.dump(dataset, f, indent=2)
+json.dump(dataset, sys.stdout, indent=2)

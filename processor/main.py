@@ -1,5 +1,6 @@
 import json
 import math
+import sys
 import pandas as pd
 from collections import Counter, defaultdict
 
@@ -18,8 +19,7 @@ def get_dynamic_k(bounds, submission_count):
     return k_min + (k_max - k_min) / (1 + math.exp(power))
 
 
-with open("cp_test_data.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
+data = json.load(sys.stdin)
 
 user_sub_count = Counter()
 problem_sub_count = Counter()
