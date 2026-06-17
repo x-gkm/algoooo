@@ -1,0 +1,4 @@
+CREATE TABLE user_elos (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id),
+    elo DOUBLE PRECISION NOT NULL
+);

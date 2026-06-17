@@ -1,0 +1,8 @@
+average_elo: 1500
+n0: 30
+user_k_bounds:
+  min: 32
+  max: 80
+problem_k_bounds:
+  min: 5
+  max: 10

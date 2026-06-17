@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.name, ue.elo\n                FROM users u\n                JOIN user_elos ue\n                    ON ue.user_id = u.id\n                ORDER BY ue.elo DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "elo",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "user_elos",
+            "name": "elo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "83b6b022f89637b69a708beb04653c2ca09b5d53143778881d7b20ac1f7ef809"
+}

@@ -9,5 +9,13 @@ dotenvy = "0.15.7"
 futures = "0.3.32"
 tokio = { version = "1.52.3", features = ["full"] }
 algoleague = "0.2.0"
-sqlx = { version = "0.9.0", features = ["postgres", "runtime-tokio", "macros", "chrono"] }
+sqlx = { version = "0.9.0", features = ["postgres", "runtime-tokio", "macros", "chrono", "migrate"] }
 chrono = "0.4.45"
+serde = { version = "1.0.228", features = ["derive"] }
+yaml_serde = "0.10.4"
+serde_json = "1.0.150"
+askama = "0.16.0"
+thiserror = "2.0.18"
+warp = { version = "0.3.7" }
+clap = { version = "4.6.1", features = ["derive"] }
+static_dir = "0.2.0"

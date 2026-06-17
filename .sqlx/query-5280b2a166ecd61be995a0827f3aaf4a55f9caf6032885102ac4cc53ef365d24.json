@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH triples AS (\n            SELECT DISTINCT s.contest_id, s.user_id, cp.problem_id\n            FROM submissions s\n            JOIN contest_problems cp\n                ON cp.contest_id = s.contest_id\n        ),\n        accepted AS (\n            SELECT * FROM submissions WHERE status = 'Accepted'\n        ),\n        solved_states AS (\n            SELECT\n                t.contest_id,\n                t.user_id,\n                t.problem_id,\n                ac.problem_id IS NOT NULL as is_solved\n            FROM triples t\n            LEFT JOIN accepted ac\n                ON ac.contest_id = t.contest_id\n                AND ac.user_id = t.user_id\n                AND ac.problem_id = t.problem_id\n        )\n        SELECT\n            contest_id AS id,\n            array_agg((\n                user_id,\n                problem_id,\n                is_solved\n            )) AS \"results!: Vec<(i32, i32, bool)>\"\n        FROM solved_states\n        GROUP BY contest_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "submissions",
+            "name": "contest_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "results!: Vec<(i32, i32, bool)>",
+        "type_info": "RecordArray",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "5280b2a166ecd61be995a0827f3aaf4a55f9caf6032885102ac4cc53ef365d24"
+}

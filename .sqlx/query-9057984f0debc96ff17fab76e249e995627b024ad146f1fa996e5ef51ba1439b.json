@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE problem_elos SET elo = elo + $2 WHERE problem_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9057984f0debc96ff17fab76e249e995627b024ad146f1fa996e5ef51ba1439b"
+}

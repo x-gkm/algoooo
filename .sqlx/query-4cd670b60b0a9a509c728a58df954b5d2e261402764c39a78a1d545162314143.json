@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT FROM problems WHERE name = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4cd670b60b0a9a509c728a58df954b5d2e261402764c39a78a1d545162314143"
+}

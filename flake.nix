@@ -9,6 +9,10 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    naersk = {
+      url = "github:nix-community/naersk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -28,6 +32,16 @@
           inputs',
           ...
         }:
+        let
+          toolchain = pkgs.rust-bin.stable.latest.default.override {
+            extensions = [ "rust-src" ];
+          };
+
+          naersk' = pkgs.callPackage inputs.naersk {
+            rustc = toolchain;
+            cargo = toolchain;
+          };
+        in
         {
           _module.args.pkgs = import inputs.nixpkgs {
             inherit system;
@@ -36,20 +50,15 @@
             ];
           };
 
+          packages.default = naersk'.buildPackage {
+            src = ./.;
+          };
+
           devShells.default =
-            with pkgs;
-            mkShell {
+            pkgs.mkShell {
               nativeBuildInputs = [
-                (rust-bin.stable.latest.default.override {
-                  extensions = [ "rust-src" ];
-                })
-                (python3.withPackages (
-                  ps: with ps; [
-                    pandas
-                    numpy
-                  ]
-                ))
-                sqlx-cli
+                toolchain
+                pkgs.sqlx-cli
               ];
             };
         };

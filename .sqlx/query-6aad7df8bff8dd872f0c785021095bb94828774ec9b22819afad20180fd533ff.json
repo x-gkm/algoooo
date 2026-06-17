@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO problem_elos (problem_id, elo)\n        SELECT id, $1 FROM problems\n        ON CONFLICT (problem_id) DO UPDATE SET elo = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6aad7df8bff8dd872f0c785021095bb94828774ec9b22819afad20180fd533ff"
+}

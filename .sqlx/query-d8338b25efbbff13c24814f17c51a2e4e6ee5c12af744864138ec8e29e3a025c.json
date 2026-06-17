@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n                    c.name,\n                    COALESCE(\n                        array_agg((\n                            p.name,\n                            cp.letter,\n                            pe.elo\n                        )),\n                        ARRAY[]::RECORD[]\n                    ) AS \"problems!: Vec<Problem>\"\n                FROM contests c\n                JOIN contest_problems cp\n                    ON cp.contest_id = c.id\n                JOIN problems p\n                    ON p.id = cp.problem_id\n                LEFT JOIN problem_elos pe\n                    ON pe.problem_id = p.id\n                GROUP BY c.id\n                ORDER BY c.start_date DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "contests",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "problems!: Vec<Problem>",
+        "type_info": "RecordArray",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "d8338b25efbbff13c24814f17c51a2e4e6ee5c12af744864138ec8e29e3a025c"
+}

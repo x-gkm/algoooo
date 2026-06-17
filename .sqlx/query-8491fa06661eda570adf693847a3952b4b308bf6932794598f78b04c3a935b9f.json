@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH inserted_user AS (\n                            INSERT INTO users (name) VALUES ($1)\n                            ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name\n                            RETURNING id\n                        )\n                        INSERT INTO submissions (\n                            user_id,\n                            problem_id,\n                            contest_id,\n                            status,\n                            start_date,\n                            end_date\n                        ) VALUES (\n                            (SELECT id FROM inserted_user),\n                            (SELECT id FROM problems WHERE name = $2),\n                            $3,\n                            $4,\n                            $5,\n                            $6\n                        )",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int4",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8491fa06661eda570adf693847a3952b4b308bf6932794598f78b04c3a935b9f"
+}

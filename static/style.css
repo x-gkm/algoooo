@@ -1,0 +1,19 @@
+table {
+    border-collapse: collapse;
+}
+
+td, th {
+    border: 1px solid black;
+    padding: 1em;
+    white-space: nowrap;
+    text-align: center;
+}
+
+a {
+    text-decoration: none;
+    color: #1964aa;
+}
+
+.elo {
+    font-weight: bold;
+}

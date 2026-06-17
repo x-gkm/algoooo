@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>algoooo</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+
+<body>
+    <h1>Algoooo</h1>
+    <h2>Problem Ratings</h2>
+    <table>
+        <tr>
+            <th>Contest</th>
+            {% for pl in problem_letters %}
+            <th>{{ pl }}</th>
+            {% endfor %}
+        </tr>
+        {% for c in contests %}
+        <tr>
+            <td>
+                <a href="https://algoleague.com/contest/{{ c.name }}">
+                    {{ c.name }}
+                </a>
+            </td>
+            {% for p in c.problems %}
+            <td>
+                <a href="https://algoleague.com/contest/{{ c.name }}/problem/{{ p.name }}">{{ p.name }}</a>
+                -
+                <span class="elo">
+                    {% if let Some(elo) = p.elo %}
+                    {{ elo | fmt("{:.2}") }}
+                    {% else %}
+                    N/A
+                    {% endif %}
+                </span>
+            </td>
+            {% endfor %}
+            {% for _ in c.problems.len()..problem_letters.len()%}
+            <td></td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <h2>Leaderboard</h2>
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Elo</th>
+        </tr>
+        {% for u in leaderboard %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+                <a href="https://algoleague.com/profile/{{ u.name }}">
+                    {{ u.name }}
+                </a>
+            </td>
+            <td>
+                <span class="elo">
+                    {{ u.elo | fmt("{:.2}") }}
+                </span>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
