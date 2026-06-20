@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Problems</h2>
+<table>
+    <tr>
+        <th>#</th>
+        <th>Problem</th>
+        <th>Elo</th>
+        <th>Seen in</th>
+    </tr>
+    {% for p in problems %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+            <a href="https://algoleague.com/problem/{{ p.name }}">{{ p.name }}</a>
+        </td>
+        <td>
+            <span class="elo">
+                {{ p.elo | fmt("{:.2}") }}
+            </span>
+        </td>
+        <td>
+            {% for c in p.contests %}
+            <a href="https://algoleague.com/contest/{{ c.name }}/problem/{{ p.name }}">{{ c.letter }}</a>
+            {%- if !loop.last -%},{% endif %}
+            {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

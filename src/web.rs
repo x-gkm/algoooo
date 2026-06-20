@@ -20,16 +20,34 @@ struct LeaderboardTemplate {
     leaderboard: Vec<User>,
 }
 
-struct Contest {
-    name: String,
+#[derive(askama::Template)]
+#[template(path = "problems.html")]
+struct ProblemsTemplate {
     problems: Vec<Problem>,
 }
 
+struct Contest {
+    name: String,
+    problems: Vec<ContestProblem>,
+}
+
 #[derive(sqlx::Type)]
-struct Problem {
+struct ContestProblem {
     name: String,
     letter: String,
     elo: Option<f64>,
+}
+
+struct Problem {
+    name: String,
+    elo: f64,
+    contests: Vec<ProblemContest>,
+}
+
+#[derive(sqlx::Type)]
+struct ProblemContest {
+    name: String,
+    letter: String,
 }
 
 struct User {
@@ -77,7 +95,7 @@ pub async fn serve(port: u16) -> anyhow::Result<()> {
                             pe.elo
                         )),
                         ARRAY[]::RECORD[]
-                    ) AS "problems!: Vec<Problem>"
+                    ) AS "problems!: Vec<ContestProblem>"
                 FROM contests c
                 JOIN contest_problems cp
                     ON cp.contest_id = c.id
@@ -131,9 +149,43 @@ pub async fn serve(port: u16) -> anyhow::Result<()> {
             Ok(warp::reply::html(LeaderboardTemplate { leaderboard }.render()?).into_response())
         });
 
+    let problems = warp::path!("problems")
+        .and(warp::get())
+        .and(with_db.clone())
+        .then(async |db| -> Result<Response, AppError> {
+            let problems = query_as!(
+                Problem,
+                r#"SELECT
+                    p.name,
+                    pe.elo,
+                    COALESCE(
+                        array_agg((
+                            c.name,
+                            cp.letter
+                        )),
+                        ARRAY[]::RECORD[]
+                    ) AS "contests!: Vec<ProblemContest>"
+                FROM problems p
+                JOIN problem_elos pe
+                    ON pe.problem_id = p.id
+                JOIN contest_problems cp
+                    ON cp.problem_id = p.id
+                JOIN contests c
+                    ON c.id = cp.contest_id
+                GROUP BY p.id, p.name, pe.elo
+                ORDER BY pe.elo DESC"#
+            ).fetch_all(&db).await?;
+
+            Ok(warp::reply::html(ProblemsTemplate { problems }.render()?).into_response())
+        });
+
     let static_dir = warp::path("static").and(static_dir!("static"));
 
-    let app = index.or(contests).or(leaderboard).or(static_dir);
+    let app = index
+        .or(contests)
+        .or(leaderboard)
+        .or(problems)
+        .or(static_dir);
 
     warp::serve(app).run(([0, 0, 0, 0], port)).await;
 

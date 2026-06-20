@@ -1,38 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Problem Ratings</h2>
-    <table>
-        <tr>
-            <th>Contest</th>
-            {% for pl in problem_letters %}
-            <th>{{ pl }}</th>
-            {% endfor %}
-        </tr>
-        {% for c in contests %}
-        <tr>
-            <td>
-                <a href="https://algoleague.com/contest/{{ c.name }}">
-                    {{ c.name }}
-                </a>
-            </td>
-            {% for p in c.problems %}
-            <td>
-                <a href="https://algoleague.com/contest/{{ c.name }}/problem/{{ p.name }}">{{ p.name }}</a>
-                -
-                <span class="elo">
-                    {% if let Some(elo) = p.elo %}
-                    {{ elo | fmt("{:.2}") }}
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </span>
-            </td>
-            {% endfor %}
-            {% for _ in c.problems.len()..problem_letters.len()%}
-            <td></td>
-            {% endfor %}
-        </tr>
+<h2>Contests</h2>
+<table>
+    <tr>
+        <th>Contest</th>
+        {% for pl in problem_letters %}
+        <th>{{ pl }}</th>
         {% endfor %}
-    </table>
+    </tr>
+    {% for c in contests %}
+    <tr>
+        <td>
+            <a href="https://algoleague.com/contest/{{ c.name }}">
+                {{ c.name }}
+            </a>
+        </td>
+        {% for p in c.problems %}
+        <td>
+            <a href="https://algoleague.com/contest/{{ c.name }}/problem/{{ p.name }}">{{ p.name }}</a>
+            -
+            <span class="elo">
+                {% if let Some(elo) = p.elo %}
+                {{ elo | fmt("{:.2}") }}
+                {% else %}
+                N/A
+                {% endif %}
+            </span>
+        </td>
+        {% endfor %}
+        {% for _ in c.problems.len()..problem_letters.len()%}
+        <td></td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
 {% endblock %}
