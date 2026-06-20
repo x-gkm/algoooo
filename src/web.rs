@@ -3,15 +3,20 @@ use sqlx::query_as;
 use static_dir::static_dir;
 use warp::{
     Filter,
-    http::StatusCode,
+    http::{StatusCode, Uri},
     reply::{Reply, Response},
 };
 
 #[derive(askama::Template)]
-#[template(path = "index.html")]
-struct IndexTemplate {
+#[template(path = "contests.html")]
+struct ContestsTemplate {
     problem_letters: Vec<String>,
     contests: Vec<Contest>,
+}
+
+#[derive(askama::Template)]
+#[template(path = "leaderboard.html")]
+struct LeaderboardTemplate {
     leaderboard: Vec<User>,
 }
 
@@ -48,7 +53,6 @@ impl warp::Reply for AppError {
     }
 }
 
-
 pub async fn serve(port: u16) -> anyhow::Result<()> {
     let db = crate::init().await?;
 
@@ -56,7 +60,11 @@ pub async fn serve(port: u16) -> anyhow::Result<()> {
 
     let index = warp::path!()
         .and(warp::get())
-        .and(with_db)
+        .map(|| warp::redirect::temporary(Uri::from_static("contests")));
+
+    let contests = warp::path!("contests")
+        .and(warp::get())
+        .and(with_db.clone())
         .then(async |db| -> Result<Response, AppError> {
             let contests = query_as!(
                 Contest,
@@ -95,6 +103,20 @@ pub async fn serve(port: u16) -> anyhow::Result<()> {
                 })
                 .collect();
 
+            Ok(warp::reply::html(
+                ContestsTemplate {
+                    contests,
+                    problem_letters,
+                }
+                .render()?,
+            )
+            .into_response())
+        });
+
+    let leaderboard = warp::path!("leaderboard")
+        .and(warp::get())
+        .and(with_db.clone())
+        .then(async |db| -> Result<Response, AppError> {
             let leaderboard = query_as!(
                 User,
                 "SELECT u.name, ue.elo
@@ -106,19 +128,12 @@ pub async fn serve(port: u16) -> anyhow::Result<()> {
             .fetch_all(&db)
             .await?;
 
-            let result = IndexTemplate {
-                problem_letters,
-                contests,
-                leaderboard,
-            }
-            .render()?;
-
-            Ok(warp::reply::html(result).into_response())
+            Ok(warp::reply::html(LeaderboardTemplate { leaderboard }.render()?).into_response())
         });
 
     let static_dir = warp::path("static").and(static_dir!("static"));
 
-    let app = index.or(static_dir);
+    let app = index.or(contests).or(leaderboard).or(static_dir);
 
     warp::serve(app).run(([0, 0, 0, 0], port)).await;
 

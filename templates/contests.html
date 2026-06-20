@@ -1,15 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>algoooo</title>
-    <link rel="stylesheet" href="static/style.css">
-</head>
-
-<body>
-    <h1>Algoooo</h1>
+{% block content %}
     <h2>Problem Ratings</h2>
     <table>
         <tr>
@@ -44,29 +35,4 @@
         </tr>
         {% endfor %}
     </table>
-    <h2>Leaderboard</h2>
-    <table>
-        <tr>
-            <th>#</th>
-            <th>Username</th>
-            <th>Elo</th>
-        </tr>
-        {% for u in leaderboard %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>
-                <a href="https://algoleague.com/profile/{{ u.name }}">
-                    {{ u.name }}
-                </a>
-            </td>
-            <td>
-                <span class="elo">
-                    {{ u.elo | fmt("{:.2}") }}
-                </span>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-
-</html>
+{% endblock %}
